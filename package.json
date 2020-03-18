@@ -1,0 +1,36 @@
+{
+  "name": "frontend-project-lvl2",
+  "version": "0.1.0",
+  "description": "Utility for generating diff between config files",
+  "keywords": [
+    "hexlet",
+    "frontend",
+    "cli"
+  ],
+  "author": "@irestone",
+  "license": "MIT",
+  "homepage": "https://github.com/irestone/frontend-project-lvl2#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/irestone/frontend-project-lvl2.git"
+  },
+  "bugs": {
+    "url": "https://github.com/irestone/frontend-project-lvl2/issues"
+  },
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "gendiff": "bin/gendiff.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
+  }
+}
