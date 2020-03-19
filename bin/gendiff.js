@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
-import { hi } from '../src/index.js'
+import commander from 'commander'
 
-hi()
+const { program } = commander
+
+program.version('0.1.0')
+
+program.parse(process.argv)
