@@ -1,9 +1,16 @@
 import fs from 'fs'
+import path from 'path'
 import { intersection, difference, isEqual, concat } from 'lodash'
 
-const genDiff = (pathToFile1, pathToFile2, options) => {
-  const data1 = fs.readFileSync(pathToFile1, 'utf8') |> JSON.parse
-  const data2 = fs.readFileSync(pathToFile2, 'utf8') |> JSON.parse
+import parse from './parser'
+
+const genDiff = (filepath1, filepath2) => {
+  const data1 = fs.readFileSync(filepath1, 'utf8')
+    |> ((content) => parse(content, path.extname(filepath1).slice(1)))
+
+  const data2 = fs.readFileSync(filepath2, 'utf8')
+    |> ((content) => parse(content, path.extname(filepath2).slice(1)))
+
   const comparison = compare(data1, data2)
 
   const unchanged = comparison.same.map(key => line.unchanged(data1, key))
