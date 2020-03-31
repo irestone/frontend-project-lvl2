@@ -1,48 +1,109 @@
-import fs from 'fs'
-import path from 'path'
-import { intersection, difference, isEqual, concat } from 'lodash'
+import { union, isObject, has, isEqual, reduce } from 'lodash'
 
-import parse from './parser'
+import { parseFile } from './parser'
 
 const genDiff = (filepath1, filepath2) => {
-  const data1 = fs.readFileSync(filepath1, 'utf8')
-    |> ((content) => parse(content, path.extname(filepath1).slice(1)))
-
-  const data2 = fs.readFileSync(filepath2, 'utf8')
-    |> ((content) => parse(content, path.extname(filepath2).slice(1)))
-
-  const comparison = compare(data1, data2)
-
-  const unchanged = comparison.same.map(key => line.unchanged(data1, key))
-  const removed = comparison.unique[0].map(key => line.removed(data1, key))
-  const added = comparison.unique[1].map(key => line.added(data2, key))
-  const modified = comparison.different.map(key => [
-    line.removed(data1, key),
-    line.added(data2, key)
-  ]).flat()
-
-  return `{\n${concat(unchanged, removed, added, modified).join('\n')}\n}`
+  return buildDiff(parseFile(filepath1), parseFile(filepath2)) |> stringify
 }
 
-const compare = (obj1, obj2) => {
-  const obj1Keys = Object.keys(obj1)
-  const obj2Keys = Object.keys(obj2)
-  const commonKeys = intersection(obj1Keys, obj2Keys)
+export const buildDiff = (before, after) => {
+  const traverse = (before, after) => {
+    const keys = union(Object.keys(before), Object.keys(after))
+    return keys.reduce((acc, key) => {
+      const beforeValue = before[key]
+      const afterValue = after[key]
+      const node = isObject(beforeValue) && isObject(afterValue)
+        ? traverse(beforeValue, afterValue) |> createNestedNode
+        : !has(before, key)
+          ? createPlainNode(statuses.added, afterValue)
+          : !has(after, key)
+            ? createPlainNode(statuses.removed, beforeValue)
+            : !isEqual(beforeValue, afterValue)
+              ? createPlainNode(statuses.modified, [beforeValue, afterValue])
+              : createPlainNode(statuses.unchanged, beforeValue)
+      return { ...acc, [key]: node }
+    }, {})
+  }
 
-  const same = commonKeys.filter((key) => isEqual(obj1[key], obj2[key]))
-  const different = difference(commonKeys, same)
-  const unique = [
-    difference(obj1Keys, commonKeys),
-    difference(obj2Keys, commonKeys)
-  ]
-
-  return { same, different, unique }
+  return traverse(before, after)
 }
 
-const line = {
-  added: (obj, key) => `  + ${key}: ${obj[key]}`,
-  removed: (obj, key) => `  - ${key}: ${obj[key]}`,
-  unchanged: (obj, key) => `    ${key}: ${obj[key]}`
+export const stringify = (diff) => {
+  const objToStr = (obj, depth) => {
+    const lines = reduce(obj, (acc, value, key) => {
+      return isObject(value)
+        ? [...acc, `    ${key}: ${objToStr(value, depth + 1)}`]
+        : [...acc, `    ${key}: ${value}`]
+    }, [])
+    const pad = ' '.repeat(4 * depth)
+    return ['{', ...lines, '}'].map((line) => pad + line).join('\n').trim()
+  }
+
+  const cv = (depth) => (val) => isObject(val) ? objToStr(val, depth) : val
+
+  const statusSigns = {
+    [statuses.added]: '+',
+    [statuses.removed]: '-',
+    [statuses.unchanged]: ' '
+  }
+
+  const traverse = (tree, depth) => {
+    const lines = reduce(tree, (acc, node, key) => {
+      if (isNestedNode(node)) {
+        return [...acc, `    ${key}: ${traverse(node.children, depth + 1)}`]
+      }
+
+      const v = cv(depth + 1)
+      const { status, value } = node
+
+      if (status === 'modified') {
+        return [
+          ...acc,
+          `  ${statusSigns.removed} ${key}: ${v(value[0])}`,
+          `  ${statusSigns.added} ${key}: ${v(value[1])}`
+        ]
+      }
+
+      return [...acc, `   ${statusSigns[status]} ${key}: ${v(value)}`]
+    }, [])
+
+    const pad = ' '.repeat(4 * depth)
+    return ['{', ...lines, '}'].map((line) => pad + line).join('\n').trim()
+  }
+
+  const r = traverse(diff, 0)
+  console.log(r)
+  return r
 }
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//  Node
+
+const types = {
+  nested: 'nested',
+  plain: 'plain'
+}
+
+const statuses = {
+  added: 'added',
+  removed: 'removed',
+  modified: 'modified',
+  unchanged: 'unchanged'
+}
+
+const createNestedNode = (children) => ({ type: types.nested, children })
+const createPlainNode = (status, value) => ({ type: types.plain, status, value })
+
+const isNestedNode = (node) => node.type === types.nested
+// const isPlainNode = (node) => node.type === types.plain
+// const isAdded = (node) => node.status === statuses.added
+// const isRemoved = (node) => node.status === statuses.removed
+// const isModified = (node) => node.status === statuses.modified
+// const isUnchanged = (node) => node.status === statuses.unchanged
+
+//  Node
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 export default genDiff
+
+// ? (parseFile(filepath1), parseFile(filepath2)) |> buildDiff |> stringify

@@ -1,31 +1,37 @@
+import fs from 'fs'
 import path from 'path'
+import { trim } from 'lodash'
 
-import gendiff from '../src'
+import { parseFile } from '../src/parser'
+import { buildDiff, stringify } from '../src'
 
-const getFixturePath = (filename) => {
+const getPath = (filename) => {
   return path.join(__dirname, '..', '__fixtures__', filename)
 }
 
+const readFile = (filepath) => fs.readFileSync(filepath, 'utf8')
+
+describe('parseFile', () => {
+  const before = getPath('before.json') |> readFile |> JSON.parse
+  const after = getPath('after.json') |> readFile |> JSON.parse
+
+  test.each(['json', 'yaml', 'ini'])('%s', (extname) => {
+    expect(getPath(`before.${extname}`) |> parseFile).toEqual(before)
+    expect(getPath(`after.${extname}`) |> parseFile).toEqual(after)
+  })
+})
+
 describe('gendiff', () => {
-  test.each(['json', 'yaml', 'ini'])('%s', (ext) => {
-    const beforePath = getFixturePath(`before.${ext}`)
-    const afterPath = getFixturePath(`after.${ext}`)
-    const diff = gendiff(beforePath, afterPath)
+  const before = getPath('before.json') |> parseFile
+  const after = getPath('after.json') |> parseFile
+  const diff = getPath('diff.json') |> parseFile
+  const snapshot = getPath('snapshot') |> readFile |> trim
 
-    expect(diff).toMatch(/^{\n( {2}( |\+|-) \w+: .+\n)*}$/gm)
+  test('buildDiff', () => {
+    expect(buildDiff(before, after)).toEqual(diff)
+  })
 
-    const lines = diff.split('\n')
-
-    expect(lines).toHaveLength(7)
-
-    expect(lines).toContain('    d: d')
-    expect(lines).toContain('  - b: b')
-    expect(lines).toContain('  + c: c')
-    expect(lines).toContain('  - a: a')
-    expect(lines).toContain('  + a: aa')
-
-    expect(Math.abs(
-      lines.indexOf('  - a: a') - lines.indexOf('  + a: aa')
-    )).toBe(1)
+  test.skip('stringify', () => {
+    expect(stringify(diff)).toEqual(snapshot)
   })
 })
