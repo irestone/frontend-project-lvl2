@@ -3,7 +3,7 @@ import path from 'path'
 import { trim } from 'lodash'
 
 import { parseFile } from '../src/parser'
-import { buildDiff, stringify } from '../src'
+import gendiff from '../src'
 
 const getPath = (filename) => {
   return path.join(__dirname, '..', '__fixtures__', filename)
@@ -22,16 +22,12 @@ describe('parseFile', () => {
 })
 
 describe('gendiff', () => {
-  const before = getPath('before.json') |> parseFile
-  const after = getPath('after.json') |> parseFile
-  const diff = getPath('diff.json') |> parseFile
   const snapshot = getPath('snapshot') |> readFile |> trim
 
-  test('buildDiff', () => {
-    expect(buildDiff(before, after)).toEqual(diff)
-  })
+  test.each(['json', 'yaml', 'ini'])('%s', (extname) => {
+    const filepath1 = getPath(`before.${extname}`)
+    const filepath2 = getPath(`after.${extname}`)
 
-  test.skip('stringify', () => {
-    expect(stringify(diff)).toEqual(snapshot)
+    expect(gendiff(filepath1, filepath2)).toEqual(snapshot)
   })
 })
