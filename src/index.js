@@ -1,12 +1,19 @@
-import { union, isObject, has, isEqual, reduce } from 'lodash'
+import fs from 'fs'
+import path from 'path'
+import { union, isObject, has, isEqual } from 'lodash'
 
-import { parseFile } from './parser'
+import { getParser } from './parsers'
+import { getFormatter, defaultFormatter } from './formatters'
 
-const genDiff = (filepath1, filepath2) => {
-  return buildDiff(parseFile(filepath1), parseFile(filepath2)) |> stringify
+const genDiff = (filepath1, filepath2, format) => {
+  const parse = getParser(path.extname(filepath1).slice(1))
+  const obj1 = fs.readFileSync(filepath1, 'utf8') |> parse
+  const obj2 = fs.readFileSync(filepath2, 'utf8') |> parse
+  const stringify = format ? getFormatter(format) : defaultFormatter
+  return buildDiff(obj1, obj2) |> stringify
 }
 
-export const buildDiff = (before, after) => {
+const buildDiff = (before, after) => {
   const traverse = (before, after) => {
     const keys = union(Object.keys(before), Object.keys(after))
     return keys.reduce((acc, key) => {
@@ -17,10 +24,10 @@ export const buildDiff = (before, after) => {
         : !has(before, key)
           ? createPlainNode(statuses.added, afterValue)
           : !has(after, key)
-            ? createPlainNode(statuses.removed, beforeValue)
+            ? createPlainNode(statuses.deleted, beforeValue)
             : !isEqual(beforeValue, afterValue)
-              ? createPlainNode(statuses.modified, [beforeValue, afterValue])
-              : createPlainNode(statuses.unchanged, beforeValue)
+              ? createPlainNode(statuses.changed, [beforeValue, afterValue])
+              : createPlainNode(statuses.untouched, beforeValue)
       return { ...acc, [key]: node }
     }, {})
   }
@@ -28,76 +35,30 @@ export const buildDiff = (before, after) => {
   return traverse(before, after)
 }
 
-export const stringify = (diff) => {
-  const objToStr = (obj, depth) => {
-    const props = reduce(obj, (acc, value, key) => {
-      const propValue = isObject(value) ? objToStr(value, depth + 1) : value
-      const prop = `    ${key}: ${propValue}`
-      return [...acc, prop]
-    }, [])
-    const pad = ' '.repeat(4 * depth)
-    return ['{', ...props, '}'].map((line) => pad + line).join('\n').trim()
-  }
-
-  const cv = (depth) => (val) => isObject(val) ? objToStr(val, depth) : val
-
-  const statusSigns = {
-    [statuses.added]: '+',
-    [statuses.removed]: '-',
-    [statuses.unchanged]: ' '
-  }
-
-  const traverse = (tree, depth) => {
-    const props = reduce(tree, (acc, node, key) => {
-      if (isNestedNode(node)) {
-        return [...acc, `    ${key}: ${traverse(node.children, depth + 1)}`]
-      }
-
-      const v = cv(depth + 1)
-      const { status, value } = node
-
-      if (status === 'modified') {
-        return [
-          ...acc,
-          `  ${statusSigns.removed} ${key}: ${v(value[0])}`,
-          `  ${statusSigns.added} ${key}: ${v(value[1])}`
-        ]
-      }
-
-      return [...acc, `  ${statusSigns[status]} ${key}: ${v(value)}`]
-    }, [])
-
-    const pad = ' '.repeat(4 * depth)
-    return ['{', ...props, '}'].map((line) => pad + line).join('\n').trim()
-  }
-
-  return traverse(diff, 0)
-}
-
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //  Node
 
-const types = {
+export const types = {
   nested: 'nested',
   plain: 'plain'
 }
 
-const statuses = {
+export const statuses = {
   added: 'added',
-  removed: 'removed',
-  modified: 'modified',
-  unchanged: 'unchanged'
+  deleted: 'deleted',
+  changed: 'changed',
+  untouched: 'untouched'
 }
 
-const createNestedNode = (children) => ({ type: types.nested, children })
-const createPlainNode = (status, value) => ({ type: types.plain, status, value })
+export const createNestedNode = (children) => ({ type: types.nested, children })
+export const createPlainNode = (status, value) => ({
+  type: types.plain,
+  status,
+  value
+})
 
-const isNestedNode = (node) => node.type === types.nested
-// const isPlainNode = (node) => node.type === types.plain
-// const isAdded = (node) => node.status === statuses.added
-// const isRemoved = (node) => node.status === statuses.removed
-// const isModified = (node) => node.status === statuses.modified
-// const isUnchanged = (node) => node.status === statuses.unchanged
+export const isNested = (node) => node.type === types.nested
+export const isPlain = (node) => node.type === types.plain
 
 //  Node
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
