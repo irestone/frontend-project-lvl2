@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { mapValues, isObject, isString } from 'lodash'
+import { mapValues, isObject, isString, isEmpty, toNumber } from 'lodash'
 
 import yaml from 'js-yaml'
 import ini from 'ini'
@@ -26,9 +26,7 @@ const iniParse = (content) => {
     return mapValues(obj, (value) => {
       return isObject(value)
         ? normalize(value)
-        : isString(value) && value.match(/^\d+$/)
-          ? Number(value)
-          : value
+        : (isString(value) && !isEmpty(value) && toNumber(value)) || value
     })
   }
 

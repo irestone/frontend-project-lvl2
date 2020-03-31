@@ -30,13 +30,13 @@ export const buildDiff = (before, after) => {
 
 export const stringify = (diff) => {
   const objToStr = (obj, depth) => {
-    const lines = reduce(obj, (acc, value, key) => {
-      return isObject(value)
-        ? [...acc, `    ${key}: ${objToStr(value, depth + 1)}`]
-        : [...acc, `    ${key}: ${value}`]
+    const props = reduce(obj, (acc, value, key) => {
+      const propValue = isObject(value) ? objToStr(value, depth + 1) : value
+      const prop = `    ${key}: ${propValue}`
+      return [...acc, prop]
     }, [])
     const pad = ' '.repeat(4 * depth)
-    return ['{', ...lines, '}'].map((line) => pad + line).join('\n').trim()
+    return ['{', ...props, '}'].map((line) => pad + line).join('\n').trim()
   }
 
   const cv = (depth) => (val) => isObject(val) ? objToStr(val, depth) : val
@@ -48,7 +48,7 @@ export const stringify = (diff) => {
   }
 
   const traverse = (tree, depth) => {
-    const lines = reduce(tree, (acc, node, key) => {
+    const props = reduce(tree, (acc, node, key) => {
       if (isNestedNode(node)) {
         return [...acc, `    ${key}: ${traverse(node.children, depth + 1)}`]
       }
@@ -64,16 +64,14 @@ export const stringify = (diff) => {
         ]
       }
 
-      return [...acc, `   ${statusSigns[status]} ${key}: ${v(value)}`]
+      return [...acc, `  ${statusSigns[status]} ${key}: ${v(value)}`]
     }, [])
 
     const pad = ' '.repeat(4 * depth)
-    return ['{', ...lines, '}'].map((line) => pad + line).join('\n').trim()
+    return ['{', ...props, '}'].map((line) => pad + line).join('\n').trim()
   }
 
-  const r = traverse(diff, 0)
-  console.log(r)
-  return r
+  return traverse(diff, 0)
 }
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
