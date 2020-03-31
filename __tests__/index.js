@@ -2,7 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import { trim } from 'lodash'
 
-import { parseFile } from '../src/parser'
 import gendiff from '../src'
 
 const getPath = (filename) => {
@@ -11,23 +10,24 @@ const getPath = (filename) => {
 
 const readFile = (filepath) => fs.readFileSync(filepath, 'utf8')
 
-describe('parseFile', () => {
-  const before = getPath('before.json') |> readFile |> JSON.parse
-  const after = getPath('after.json') |> readFile |> JSON.parse
-
-  test.each(['json', 'yaml', 'ini'])('%s', (extname) => {
-    expect(getPath(`before.${extname}`) |> parseFile).toEqual(before)
-    expect(getPath(`after.${extname}`) |> parseFile).toEqual(after)
-  })
-})
-
 describe('gendiff', () => {
-  const snapshot = getPath('snapshot') |> readFile |> trim
+  describe('works with', () => {
+    const snapshot = getPath('plain') |> readFile |> trim
 
-  test.each(['json', 'yaml', 'ini'])('%s', (extname) => {
-    const filepath1 = getPath(`before.${extname}`)
-    const filepath2 = getPath(`after.${extname}`)
+    test.each(['json', 'yaml', 'ini'])('%s files', (extname) => {
+      const filepath1 = getPath(`before.${extname}`)
+      const filepath2 = getPath(`after.${extname}`)
+      expect(gendiff(filepath1, filepath2)).toEqual(snapshot)
+    })
+  })
 
-    expect(gendiff(filepath1, filepath2)).toEqual(snapshot)
+  describe('outputs in', () => {
+    const filepath1 = getPath('before.json')
+    const filepath2 = getPath('after.json')
+
+    test.each(['plain', 'structured'])('%s format', (format) => {
+      const snapshot = getPath(format) |> readFile |> trim
+      expect(gendiff(filepath1, filepath2, format)).toEqual(snapshot)
+    })
   })
 })
