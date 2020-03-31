@@ -25,7 +25,7 @@ describe('gendiff', () => {
     const filepath1 = getPath('before.json')
     const filepath2 = getPath('after.json')
 
-    test.each(['plain', 'structured'])('%s format', (format) => {
+    test.each(['plain', 'structured', 'json'])('%s format', (format) => {
       const snapshot = getPath(format) |> readFile |> trim
       expect(gendiff(filepath1, filepath2, format)).toEqual(snapshot)
     })
