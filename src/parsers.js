@@ -7,23 +7,17 @@ const getParser = (format) => {
   switch (format) {
     case 'json': return JSON.parse
     case 'yaml': return yaml.safeLoad
-    case 'ini': return iniParse
+    case 'ini': return (string) => ini.parse(string) |> normalize
     default: throw new Error(`Unsupported file format: ${format}`)
   }
 }
 
-const iniParse = (content) => {
-  const parsed = ini.parse(content)
-
-  const normalize = (obj) => {
-    return mapValues(obj, (value) => {
-      return isObject(value)
-        ? normalize(value)
-        : (isString(value) && !isEmpty(value) && toNumber(value)) || value
-    })
-  }
-
-  return normalize(parsed)
+const normalize = (object) => {
+  return mapValues(object, (value) => {
+    return isObject(value)
+      ? normalize(value)
+      : (isString(value) && !isEmpty(value) && toNumber(value)) || value
+  })
 }
 
 export {

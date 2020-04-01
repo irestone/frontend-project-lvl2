@@ -3,7 +3,7 @@ import { reduce, isObject } from 'lodash'
 import { isDiff, statuses } from '../diffBuilder'
 
 const traverse = (parentNode, depth) => {
-  const v = createValueBuilder(depth)
+  const v = createValueFormatter(depth)
 
   const props = reduce(parentNode.children, (acc, node, name) => {
     if (isDiff(node)) {
@@ -36,7 +36,7 @@ const traverse = (parentNode, depth) => {
   return ['{', ...props, '}'].map((prop) => pad + prop).join('\n').trim()
 }
 
-const createValueBuilder = (depth) => (value) => {
+const createValueFormatter = (depth) => (value) => {
   return isObject(value) ? objectToString(value, depth + 1) : value
 }
 
