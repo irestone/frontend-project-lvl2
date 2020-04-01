@@ -7,62 +7,67 @@ import { getFormatter, defaultFormatter } from './formatters'
 
 const genDiff = (filepath1, filepath2, format) => {
   const parse = getParser(path.extname(filepath1).slice(1))
-  const obj1 = fs.readFileSync(filepath1, 'utf8') |> parse
-  const obj2 = fs.readFileSync(filepath2, 'utf8') |> parse
+  const before = fs.readFileSync(filepath1, 'utf8') |> parse
+  const after = fs.readFileSync(filepath2, 'utf8') |> parse
   const stringify = format ? getFormatter(format) : defaultFormatter
-  return buildDiff(obj1, obj2) |> stringify
+  return buildDiff(before, after) |> stringify
 }
 
-const buildDiff = (before, after) => {
-  const traverse = (before, after) => {
-    const keys = union(Object.keys(before), Object.keys(after))
-    return keys.reduce((acc, key) => {
-      const beforeValue = before[key]
-      const afterValue = after[key]
-      const node = isObject(beforeValue) && isObject(afterValue)
-        ? traverse(beforeValue, afterValue) |> createNestedNode
-        : !has(before, key)
-          ? createPlainNode(statuses.added, afterValue)
-          : !has(after, key)
-            ? createPlainNode(statuses.deleted, beforeValue)
-            : !isEqual(beforeValue, afterValue)
-              ? createPlainNode(statuses.changed, [beforeValue, afterValue])
-              : createPlainNode(statuses.untouched, beforeValue)
-      return { ...acc, [key]: node }
-    }, {})
-  }
+// =====================================
+//  DIFF BUILDING
+// =====================================
 
-  return traverse(before, after)
-}
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//  Node
-
-export const types = {
-  nested: 'nested',
-  plain: 'plain'
-}
-
-export const statuses = {
-  added: 'added',
-  deleted: 'deleted',
-  changed: 'changed',
-  untouched: 'untouched'
-}
-
-export const createNestedNode = (children) => ({ type: types.nested, children })
-export const createPlainNode = (status, value) => ({
-  type: types.plain,
-  status,
-  value
+const buildDiff = (before, after) => ({
+  type: types.diff,
+  children: traverse(before, after)
 })
 
-export const isNested = (node) => node.type === types.nested
-export const isPlain = (node) => node.type === types.plain
+const buildProperty = (value, status) => ({
+  type: types.prop,
+  value,
+  status
+})
 
-//  Node
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+const traverse = (before, after) => {
+  const keys = union(Object.keys(before), Object.keys(after))
+  return keys.reduce((acc, key) => {
+    const valueBefore = before[key]
+    const valueAfter = after[key]
+    const node = isObject(valueBefore) && isObject(valueAfter)
+      ? buildDiff(valueBefore, valueAfter)
+      : !has(before, key)
+        ? buildProperty(valueAfter, statuses.added)
+        : !has(after, key)
+          ? buildProperty(valueBefore, statuses.deleted)
+          : !isEqual(valueBefore, valueAfter)
+            ? buildProperty([valueBefore, valueAfter], statuses.changed)
+            : buildProperty(valueBefore)
+    return { ...acc, [key]: node }
+  }, {})
+}
+
+const types = {
+  diff: 'diff',
+  prop: 'property'
+}
+
+const statuses = {
+  added: 'added',
+  deleted: 'deleted',
+  changed: 'changed'
+}
+
+const isDiff = (node) => node.type === types.diff
+const isProp = (node) => node.type === types.prop
+
+// =====================================
+//  EXPORT
+// =====================================
+
+export {
+  statuses,
+  isDiff,
+  isProp
+}
 
 export default genDiff
-
-// ? (parseFile(filepath1), parseFile(filepath2)) |> buildDiff |> stringify
