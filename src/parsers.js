@@ -20,6 +20,7 @@ const normalize = (object) => {
   })
 }
 
-export {
-  getParser
+export default (content, format) => {
+  const parse = getParser(format)
+  return parse(content)
 }

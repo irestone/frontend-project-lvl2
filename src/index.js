@@ -1,14 +1,22 @@
 import fs from 'fs'
 import path from 'path'
 
-import { getParser } from './parsers'
+import parse from './parsers'
 import { getFormatter, defaultFormatter } from './formatters'
 import { buildDiff } from './diffBuilder'
 
-export default (filepath1, filepath2, format) => {
-  const parse = getParser(path.extname(filepath1).slice(1))
-  const before = fs.readFileSync(filepath1, 'utf8') |> parse
-  const after = fs.readFileSync(filepath2, 'utf8') |> parse
-  const stringify = format ? getFormatter(format) : defaultFormatter
-  return buildDiff(before, after) |> stringify
+const getFileFormat = (filepath) => path.extname(filepath).slice(1)
+
+export default (firstConfigPath, secondConfigPath, formatName) => {
+  const firstConfigContent = fs.readFileSync(firstConfigPath, 'utf8')
+  const firstConfigFormat = getFileFormat(firstConfigPath)
+  const before = parse(firstConfigContent, firstConfigFormat)
+
+  const secondConfigContent = fs.readFileSync(secondConfigPath, 'utf8')
+  const secondConfigFormat = getFileFormat(secondConfigPath)
+  const after = parse(secondConfigContent, secondConfigFormat)
+
+  const format = formatName ? getFormatter(formatName) : defaultFormatter
+
+  return buildDiff(before, after) |> format
 }
