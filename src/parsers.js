@@ -12,12 +12,24 @@ const getParser = (format) => {
   }
 }
 
+/**
+ * Recursively traverses an object converting values to a certain standard
+ */
 const normalize = (object) => {
   return mapValues(object, (value) => {
-    return isObject(value)
-      ? normalize(value)
-      : (isString(value) && !isEmpty(value) && toNumber(value)) || value
+    if (isObject(value)) {
+      return normalize(value)
+    }
+    if (isString(value)) {
+      // some parsers (ini) read a number as a string
+      return parseNumber(value) || value
+    }
+    return value
   })
+}
+
+const parseNumber = (string) => {
+  return isEmpty(string) ? NaN : toNumber(string)
 }
 
 export default (content, format) => {
