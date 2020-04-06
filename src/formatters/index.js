@@ -1,16 +1,22 @@
+import { has } from 'lodash'
+
 import plain from './plain'
 import structured from './structured'
 
-const getFormatter = (format) => {
-  switch (format) {
-    case 'plain': return plain
-    case 'structured': return structured
-    case 'json': return JSON.stringify
-    default: throw new Error(`Unknown format "${format}"`)
+const formatters = {
+  plain,
+  structured,
+  json: JSON.stringify
+}
+
+const format = (content, formatName) => {
+  if (!has(formatters, formatName)) {
+    throw new Error(`Unknown format "${formatName}"`)
   }
+  const format = formatters[formatName]
+  return format(content)
 }
 
 export {
-  getFormatter,
-  plain as defaultFormatter
+  format
 }

@@ -1,8 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 
-import parse from './parsers'
-import { getFormatter, defaultFormatter } from './formatters'
+import { parse } from './parsers'
+import { format } from './formatters'
 import { buildDiff } from './diffBuilder'
 
 const getFileFormat = (filepath) => path.extname(filepath).slice(1)
@@ -16,7 +16,7 @@ export default (firstConfigPath, secondConfigPath, formatName) => {
   const secondConfigFormat = getFileFormat(secondConfigPath)
   const after = parse(secondConfigContent, secondConfigFormat)
 
-  const format = formatName ? getFormatter(formatName) : defaultFormatter
+  const diff = buildDiff(before, after)
 
-  return buildDiff(before, after) |> format
+  return format(diff, formatName)
 }

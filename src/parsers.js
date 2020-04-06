@@ -1,15 +1,12 @@
-import { mapValues, isObject, isString, isEmpty, toNumber } from 'lodash'
+import { mapValues, isObject, isString, isEmpty, toNumber, has } from 'lodash'
 
 import yaml from 'js-yaml'
 import ini from 'ini'
 
-const getParser = (format) => {
-  switch (format) {
-    case 'json': return JSON.parse
-    case 'yaml': return yaml.safeLoad
-    case 'ini': return (string) => ini.parse(string) |> normalize
-    default: throw new Error(`Unsupported file format: ${format}`)
-  }
+const parsers = {
+  json: JSON.parse,
+  yaml: yaml.safeLoad,
+  ini: (string) => ini.parse(string) |> normalize
 }
 
 /**
@@ -22,17 +19,22 @@ const normalize = (object) => {
     }
     if (isString(value)) {
       // some parsers (ini) read a number as a string
-      return parseNumber(value) || value
+      const num = toNumber(value)
+      // toNumber() converts '' to 0, so an additional check is required
+      return !isNaN(num) && !isEmpty(value) ? num : value
     }
     return value
   })
 }
 
-const parseNumber = (string) => {
-  return isEmpty(string) ? NaN : toNumber(string)
+const parse = (content, formatName) => {
+  if (!has(parsers, formatName)) {
+    throw new Error(`Unsupported file format: ${formatName}`)
+  }
+  const parse = parsers[formatName]
+  return parse(content)
 }
 
-export default (content, format) => {
-  const parse = getParser(format)
-  return parse(content)
+export {
+  parse
 }
