@@ -1,37 +1,34 @@
 import { reduce, isObject } from 'lodash'
 
-import { isDiff, statuses } from '../diffBuilder'
+import { types } from '../diffBuilder'
 
-const traverse = (parentNode, depth) => {
+const format = (props, depth) => {
   const v = createValueFormatter(depth)
 
-  const props = reduce(parentNode.children, (acc, node, name) => {
-    if (isDiff(node)) {
-      return [...acc, `    ${name}: ${traverse(node, depth + 1)}`]
-    }
-
-    const { status, value } = node
-
+  const formattedProps = props.map(([status, key, value]) => {
     switch (status) {
-      case statuses.added:
-        return [...acc, `  + ${name}: ${v(value)}`]
-      case statuses.deleted:
-        return [...acc, `  - ${name}: ${v(value)}`]
-      case statuses.changed:
-        return [
-          ...acc,
-          `  - ${name}: ${v(value[0])}`,
-          `  + ${name}: ${v(value[1])}`
-        ]
-      case statuses.unchanged:
-        return [...acc, `    ${name}: ${v(value)}`]
+      case types.nested:
+        return `    ${key}: ${format(value, depth + 1)}`
+      case types.added:
+        return `  + ${key}: ${v(value)}`
+      case types.deleted:
+        return `  - ${key}: ${v(value)}`
+      case types.changed:
+        return [`  - ${key}: ${v(value[0])}`, `  + ${key}: ${v(value[1])}`]
+      case types.unchanged:
+        return `    ${key}: ${v(value)}`
       default:
         throw new Error(`Unknown status "${status}"`)
     }
-  }, [])
+  })
 
   const pad = ' '.repeat(4 * depth)
-  return ['{', ...props, '}'].map((prop) => pad + prop).join('\n').trim()
+
+  return ['{', ...formattedProps, '}']
+    .flat()
+    .map((prop) => pad + prop)
+    .join('\n')
+    .trim()
 }
 
 const createValueFormatter = (depth) => (value) => {
@@ -48,4 +45,4 @@ const objectToString = (object, depth) => {
   return ['{', ...props, '}'].map((prop) => pad + prop).join('\n').trim()
 }
 
-export default (diff) => traverse(diff, 0)
+export default (diff) => format(diff, 0)

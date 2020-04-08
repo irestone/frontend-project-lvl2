@@ -3,7 +3,7 @@ import path from 'path'
 
 import { parse } from './parsers'
 import { format } from './formatters'
-import { buildDiff } from './diffBuilder'
+import buildDiff from './diffBuilder'
 
 const getFileFormat = (filepath) => path.extname(filepath).slice(1)
 

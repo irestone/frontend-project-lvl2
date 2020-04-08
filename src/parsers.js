@@ -21,7 +21,7 @@ const normalize = (object) => {
       // some parsers (ini) read a number as a string
       const num = toNumber(value)
       // toNumber() converts '' to 0, so an additional check is required
-      return !isNaN(num) && !isEmpty(value) ? num : value
+      return isNaN(num) || isEmpty(value) ? value : num
     }
     return value
   })

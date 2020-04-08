@@ -1,32 +1,27 @@
-import { reduce, isObject, isString } from 'lodash'
+import { isObject, isString, identity } from 'lodash'
 
-import { isDiff, statuses } from '../diffBuilder'
+import { types } from '../diffBuilder'
 
-const traverse = (parentNode, parentAncestry) => {
-  return reduce(parentNode.children, (acc, node, name) => {
-    const ancestry = [...parentAncestry, name]
-
-    if (isDiff(node)) {
-      return [...acc, ...traverse(node, ancestry)]
-    }
-
-    const { value, status } = node
-
-    const prop = `Property '${ancestry.join('.')}' was`
+const format = (props, parentAncestry) => {
+  return props.map(([status, key, value]) => {
+    const ancestry = [...parentAncestry, key]
+    const prefix = `Property '${ancestry.join('.')}' was`
 
     switch (status) {
-      case statuses.added:
-        return [...acc, `${prop} added with ${v(value)}`]
-      case statuses.deleted:
-        return [...acc, `${prop} deleted`]
-      case statuses.changed:
-        return [...acc, `${prop} changed from ${v(value[0])} to ${v(value[1])}`]
-      case statuses.unchanged:
-        return acc
+      case types.nested:
+        return format(value, ancestry)
+      case types.added:
+        return `${prefix} added with ${v(value)}`
+      case types.deleted:
+        return `${prefix} deleted`
+      case types.changed:
+        return `${prefix} changed from ${v(value[0])} to ${v(value[1])}`
+      case types.unchanged:
+        return null
       default:
         throw new Error(`Unknown status "${status}"`)
     }
-  }, [])
+  }).filter(identity).join('\n')
 }
 
 const v = (value) => {
@@ -37,4 +32,4 @@ const v = (value) => {
       : value
 }
 
-export default (diff) => traverse(diff, []).join('\n')
+export default (diff) => format(diff, [])
