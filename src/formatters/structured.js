@@ -12,10 +12,6 @@ const traverse = (parentNode, depth) => {
 
     const { status, value } = node
 
-    if (!status) {
-      return [...acc, `    ${name}: ${v(value)}`]
-    }
-
     switch (status) {
       case statuses.added:
         return [...acc, `  + ${name}: ${v(value)}`]
@@ -27,8 +23,10 @@ const traverse = (parentNode, depth) => {
           `  - ${name}: ${v(value[0])}`,
           `  + ${name}: ${v(value[1])}`
         ]
+      case statuses.unchanged:
+        return [...acc, `    ${name}: ${v(value)}`]
       default:
-        throw new Error(`Unknown diff node status "${node.status}"`)
+        throw new Error(`Unknown status "${status}"`)
     }
   }, [])
 

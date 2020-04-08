@@ -16,16 +16,27 @@ const traverse = (before, after) => {
   return keys.reduce((acc, key) => {
     const valueBefore = before[key]
     const valueAfter = after[key]
-    const node = isObject(valueBefore) && isObject(valueAfter)
-      ? buildDiff(valueBefore, valueAfter)
-      : !has(before, key)
-        ? buildProperty(valueAfter, statuses.added)
-        : !has(after, key)
-          ? buildProperty(valueBefore, statuses.deleted)
-          : !isEqual(valueBefore, valueAfter)
-            ? buildProperty([valueBefore, valueAfter], statuses.changed)
-            : buildProperty(valueBefore)
-    return { ...acc, [key]: node }
+
+    if (isObject(valueBefore) && isObject(valueAfter)) {
+      return { ...acc, [key]: buildDiff(valueBefore, valueAfter) }
+    }
+
+    if (!has(before, key)) {
+      return { ...acc, [key]: buildProperty(valueAfter, statuses.added) }
+    }
+
+    if (!has(after, key)) {
+      return { ...acc, [key]: buildProperty(valueBefore, statuses.deleted) }
+    }
+
+    if (!isEqual(valueBefore, valueAfter)) {
+      return {
+        ...acc,
+        [key]: buildProperty([valueBefore, valueAfter], statuses.changed)
+      }
+    }
+
+    return { ...acc, [key]: buildProperty(valueBefore, statuses.unchanged) }
   }, {})
 }
 
@@ -37,7 +48,8 @@ const types = {
 const statuses = {
   added: 'added',
   deleted: 'deleted',
-  changed: 'changed'
+  changed: 'changed',
+  unchanged: 'unchanged'
 }
 
 const isDiff = (node) => node.type === types.diff

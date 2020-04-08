@@ -12,10 +12,6 @@ const traverse = (parentNode, parentAncestry) => {
 
     const { value, status } = node
 
-    if (!status) {
-      return acc
-    }
-
     const prop = `Property '${ancestry.join('.')}' was`
 
     switch (status) {
@@ -25,8 +21,10 @@ const traverse = (parentNode, parentAncestry) => {
         return [...acc, `${prop} deleted`]
       case statuses.changed:
         return [...acc, `${prop} changed from ${v(value[0])} to ${v(value[1])}`]
+      case statuses.unchanged:
+        return acc
       default:
-        throw new Error(`Unknown diff node status "${status}"`)
+        throw new Error(`Unknown status "${status}"`)
     }
   }, [])
 }
