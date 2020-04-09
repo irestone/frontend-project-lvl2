@@ -3,20 +3,20 @@ import { reduce, isObject } from 'lodash'
 import { types } from '../diffBuilder'
 
 const format = (props, depth) => {
-  const v = createValueFormatter(depth)
+  const stringify = createValueStringifier(depth)
 
   const formattedProps = props.map(([status, key, value]) => {
     switch (status) {
       case types.nested:
         return `    ${key}: ${format(value, depth + 1)}`
       case types.added:
-        return `  + ${key}: ${v(value)}`
+        return `  + ${key}: ${stringify(value)}`
       case types.deleted:
-        return `  - ${key}: ${v(value)}`
+        return `  - ${key}: ${stringify(value)}`
       case types.changed:
-        return [`  - ${key}: ${v(value[0])}`, `  + ${key}: ${v(value[1])}`]
+        return [`  - ${key}: ${stringify(value[0])}`, `  + ${key}: ${stringify(value[1])}`]
       case types.unchanged:
-        return `    ${key}: ${v(value)}`
+        return `    ${key}: ${stringify(value)}`
       default:
         throw new Error(`Unknown status "${status}"`)
     }
@@ -31,7 +31,7 @@ const format = (props, depth) => {
     .trim()
 }
 
-const createValueFormatter = (depth) => (value) => {
+const createValueStringifier = (depth) => (value) => {
   return isObject(value) ? objectToString(value, depth + 1) : value
 }
 

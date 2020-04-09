@@ -11,11 +11,11 @@ const format = (props, parentAncestry) => {
       case types.nested:
         return format(value, ancestry)
       case types.added:
-        return `${prefix} added with ${v(value)}`
+        return `${prefix} added with ${stringify(value)}`
       case types.deleted:
         return `${prefix} deleted`
       case types.changed:
-        return `${prefix} changed from ${v(value[0])} to ${v(value[1])}`
+        return `${prefix} changed from ${stringify(value[0])} to ${stringify(value[1])}`
       case types.unchanged:
         return null
       default:
@@ -24,7 +24,7 @@ const format = (props, parentAncestry) => {
   }).filter(identity).join('\n')
 }
 
-const v = (value) => {
+const stringify = (value) => {
   return isObject(value)
     ? '[complex value]'
     : isString(value)
