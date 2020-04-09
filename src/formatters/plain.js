@@ -1,15 +1,18 @@
 import { isObject, isString, identity } from 'lodash'
 
-import { types } from '../diffBuilder'
+import { types, getName, getType, getChildren, getValue } from '../diffBuilder'
 
 const format = (nodes, parentAncestry) => {
-  return nodes.map(({ type, name, value, children }) => {
-    const ancestry = [...parentAncestry, name]
+  return nodes.map((node) => {
+    const ancestry = [...parentAncestry, getName(node)]
     const prefix = `Property '${ancestry.join('.')}' was`
+
+    const type = getType(node)
+    const value = getValue(node)
 
     switch (type) {
       case types.nested:
-        return format(children, ancestry)
+        return format(getChildren(node), ancestry)
       case types.added:
         return `${prefix} added with ${stringify(value)}`
       case types.deleted:

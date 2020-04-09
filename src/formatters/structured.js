@@ -1,14 +1,18 @@
 import { reduce, isObject } from 'lodash'
 
-import { types } from '../diffBuilder'
+import { types, getType, getName, getValue, getChildren } from '../diffBuilder'
 
 const format = (nodes, depth) => {
   const stringify = createValueStringifier(depth)
 
-  const props = nodes.map(({ type, name, value, children }) => {
+  const props = nodes.map((node) => {
+    const type = getType(node)
+    const name = getName(node)
+    const value = getValue(node)
+
     switch (type) {
       case types.nested:
-        return `    ${name}: ${format(children, depth + 1)}`
+        return `    ${name}: ${format(getChildren(node), depth + 1)}`
       case types.added:
         return `  + ${name}: ${stringify(value)}`
       case types.deleted:
