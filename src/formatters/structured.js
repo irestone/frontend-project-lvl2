@@ -2,29 +2,32 @@ import { reduce, isObject } from 'lodash'
 
 import { types } from '../diffBuilder'
 
-const format = (props, depth) => {
+const format = (nodes, depth) => {
   const stringify = createValueStringifier(depth)
 
-  const formattedProps = props.map(([status, key, value]) => {
-    switch (status) {
+  const props = nodes.map(({ type, name, value, children }) => {
+    switch (type) {
       case types.nested:
-        return `    ${key}: ${format(value, depth + 1)}`
+        return `    ${name}: ${format(children, depth + 1)}`
       case types.added:
-        return `  + ${key}: ${stringify(value)}`
+        return `  + ${name}: ${stringify(value)}`
       case types.deleted:
-        return `  - ${key}: ${stringify(value)}`
+        return `  - ${name}: ${stringify(value)}`
       case types.changed:
-        return [`  - ${key}: ${stringify(value[0])}`, `  + ${key}: ${stringify(value[1])}`]
+        return [
+          `  - ${name}: ${stringify(value.before)}`,
+          `  + ${name}: ${stringify(value.after)}`
+        ]
       case types.unchanged:
-        return `    ${key}: ${stringify(value)}`
+        return `    ${name}: ${stringify(value)}`
       default:
-        throw new Error(`Unknown status "${status}"`)
+        throw new Error(`Unknown node type "${type}"`)
     }
   })
 
   const pad = ' '.repeat(4 * depth)
 
-  return ['{', ...formattedProps, '}']
+  return ['{', ...props, '}']
     .flat()
     .map((prop) => pad + prop)
     .join('\n')

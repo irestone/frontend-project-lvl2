@@ -15,22 +15,51 @@ const buildDiff = (before, after) => {
     const valueAfter = after[key]
 
     if (isObject(valueBefore) && isObject(valueAfter)) {
-      return [...acc, [types.nested, key, buildDiff(valueBefore, valueAfter)]]
+      const node = {
+        name: key,
+        type: types.nested,
+        children: buildDiff(valueBefore, valueAfter)
+      }
+      return [...acc, node]
     }
 
     if (!has(before, key)) {
-      return [...acc, [types.added, key, valueAfter]]
+      const node = {
+        name: key,
+        type: types.added,
+        value: valueAfter
+      }
+      return [...acc, node]
     }
 
     if (!has(after, key)) {
-      return [...acc, [types.deleted, key, valueBefore]]
+      const node = {
+        name: key,
+        type: types.deleted,
+        value: valueBefore
+      }
+      return [...acc, node]
     }
 
     if (!isEqual(valueBefore, valueAfter)) {
-      return [...acc, [types.changed, key, [valueBefore, valueAfter]]]
+      const node = {
+        name: key,
+        type: types.changed,
+        value: {
+          before: valueBefore,
+          after: valueAfter
+        }
+      }
+      return [...acc, node]
     }
 
-    return [...acc, [types.unchanged, key, valueBefore]]
+    const node = {
+      name: key,
+      type: types.unchanged,
+      value: valueBefore
+    }
+
+    return [...acc, node]
   }, [])
 }
 
