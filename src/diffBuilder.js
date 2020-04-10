@@ -45,10 +45,8 @@ const buildDiff = (before, after) => {
       const node = makeNode({
         name: key,
         type: types.changed,
-        value: {
-          before: valueBefore,
-          after: valueAfter
-        }
+        valueBefore,
+        valueAfter
       })
       return [...acc, node]
     }
@@ -67,7 +65,17 @@ const makeNode = (config) => cloneDeep(config)
 const getType = ({ type }) => type
 const getName = ({ name }) => name
 const getValue = ({ value }) => value
+const getValueBefore = ({ valueBefore }) => valueBefore
+const getValueAfter = ({ valueAfter }) => valueAfter
 const getChildren = ({ children }) => children
 
-export { types, getType, getName, getValue, getChildren }
+export {
+  types,
+  getType,
+  getName,
+  getValue,
+  getValueBefore,
+  getValueAfter,
+  getChildren
+}
 export default buildDiff

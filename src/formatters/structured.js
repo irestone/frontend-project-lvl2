@@ -1,6 +1,14 @@
 import { reduce, isObject } from 'lodash'
 
-import { types, getType, getName, getValue, getChildren } from '../diffBuilder'
+import {
+  types,
+  getType,
+  getName,
+  getValue,
+  getValueBefore,
+  getValueAfter,
+  getChildren
+} from '../diffBuilder'
 
 const format = (nodes, depth) => {
   const stringify = createValueStringifier(depth)
@@ -8,22 +16,21 @@ const format = (nodes, depth) => {
   const props = nodes.map((node) => {
     const type = getType(node)
     const name = getName(node)
-    const value = getValue(node)
 
     switch (type) {
       case types.nested:
         return `    ${name}: ${format(getChildren(node), depth + 1).trim()}`
       case types.added:
-        return `  + ${name}: ${stringify(value)}`
+        return `  + ${name}: ${stringify(getValue(node))}`
       case types.deleted:
-        return `  - ${name}: ${stringify(value)}`
+        return `  - ${name}: ${stringify(getValue(node))}`
       case types.changed:
         return [
-          `  - ${name}: ${stringify(value.before)}`,
-          `  + ${name}: ${stringify(value.after)}`
+          `  - ${name}: ${stringify(getValueBefore(node))}`,
+          `  + ${name}: ${stringify(getValueAfter(node))}`
         ]
       case types.unchanged:
-        return `    ${name}: ${stringify(value)}`
+        return `    ${name}: ${stringify(getValue(node))}`
       default:
         throw new Error(`Unknown node type "${type}"`)
     }
