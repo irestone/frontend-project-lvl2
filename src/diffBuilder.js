@@ -1,4 +1,4 @@
-import { union, isObject, has, isEqual, cloneDeep } from 'lodash'
+import { union, isObject, has, isEqual } from 'lodash'
 
 const types = {
   added: 'added',
@@ -8,10 +8,9 @@ const types = {
   nested: 'nested'
 }
 
-const makeNode = (config) => cloneDeep(config)
+const makeNode = (type, body) => ({ type, ...body })
 const getType = ({ type }) => type
 const getKey = ({ key }) => key
-const getValue = ({ value }) => value
 const getValueBefore = ({ valueBefore }) => valueBefore
 const getValueAfter = ({ valueAfter }) => valueAfter
 const getChildren = ({ children }) => children
@@ -23,43 +22,27 @@ const buildDiff = (before, after) => {
     const valueAfter = after[key]
 
     if (isObject(valueBefore) && isObject(valueAfter)) {
-      return makeNode({
-        type: types.nested,
-        key,
-        children: buildDiff(valueBefore, valueAfter)
-      })
+      return makeNode(
+        types.nested,
+        { key, children: buildDiff(valueBefore, valueAfter) }
+      )
     }
 
+    const baseNodeBody = { key, valueBefore, valueAfter }
+
     if (!has(before, key)) {
-      return makeNode({
-        type: types.added,
-        key,
-        value: valueAfter
-      })
+      return makeNode(types.added, baseNodeBody)
     }
 
     if (!has(after, key)) {
-      return makeNode({
-        type: types.deleted,
-        key,
-        value: valueBefore
-      })
+      return makeNode(types.deleted, baseNodeBody)
     }
 
     if (!isEqual(valueBefore, valueAfter)) {
-      return makeNode({
-        type: types.changed,
-        key,
-        valueBefore,
-        valueAfter
-      })
+      return makeNode(types.changed, baseNodeBody)
     }
 
-    return makeNode({
-      type: types.unchanged,
-      key,
-      value: valueBefore
-    })
+    return makeNode(types.unchanged, baseNodeBody)
   }, [])
 }
 
@@ -67,7 +50,6 @@ export {
   types,
   getType,
   getKey,
-  getValue,
   getValueBefore,
   getValueAfter,
   getChildren

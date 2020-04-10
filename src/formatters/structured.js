@@ -1,10 +1,9 @@
-import { reduce, isObject } from 'lodash'
+import { reduce, isObject, has } from 'lodash'
 
 import {
   types,
   getType,
   getKey,
-  getValue,
   getValueBefore,
   getValueAfter,
   getChildren
@@ -15,25 +14,13 @@ const format = (nodes, depth) => {
 
   const props = nodes.map((node) => {
     const type = getType(node)
-    const key = getKey(node)
 
-    switch (type) {
-      case types.nested:
-        return `    ${key}: ${format(getChildren(node), depth + 1).trim()}`
-      case types.added:
-        return `  + ${key}: ${stringify(getValue(node))}`
-      case types.deleted:
-        return `  - ${key}: ${stringify(getValue(node))}`
-      case types.changed:
-        return [
-          `  - ${key}: ${stringify(getValueBefore(node))}`,
-          `  + ${key}: ${stringify(getValueAfter(node))}`
-        ]
-      case types.unchanged:
-        return `    ${key}: ${stringify(getValue(node))}`
-      default:
-        throw new Error(`Unknown node type "${type}"`)
+    if (!has(nodeFormatters, type)) {
+      throw new Error(`Node type "${type} is not supported`)
     }
+
+    const formatNode = nodeFormatters[type]
+    return formatNode({ node, stringify, depth })
   })
 
   const pad = ' '.repeat(4 * depth)
@@ -56,6 +43,27 @@ const objectToString = (object, depth) => {
 
   const pad = ' '.repeat(4 * depth)
   return ['{', ...props, '}'].map((prop) => pad + prop).join('\n').trim()
+}
+
+const nodeFormatters = {
+  [types.nested] ({ node, depth }) {
+    return `    ${getKey(node)}: ${format(getChildren(node), depth + 1).trim()}`
+  },
+  [types.deleted] ({ node, stringify }) {
+    return `  - ${getKey(node)}: ${stringify(getValueBefore(node))}`
+  },
+  [types.added] ({ node, stringify }) {
+    return `  + ${getKey(node)}: ${stringify(getValueAfter(node))}`
+  },
+  [types.unchanged] ({ node, stringify }) {
+    return `    ${getKey(node)}: ${stringify(getValueBefore(node))}`
+  },
+  [types.changed] ({ node, stringify }) {
+    return [
+      `  - ${getKey(node)}: ${stringify(getValueBefore(node))}`,
+      `  + ${getKey(node)}: ${stringify(getValueAfter(node))}`
+    ]
+  }
 }
 
 export default (diff) => format(diff, 0)

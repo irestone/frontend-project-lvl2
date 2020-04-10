@@ -1,36 +1,26 @@
-import { isObject, isString, identity } from 'lodash'
+import { isObject, isString, identity, has } from 'lodash'
 
 import {
   types,
   getKey,
   getType,
   getChildren,
-  getValue,
   getValueBefore,
   getValueAfter
 } from '../diffBuilder'
 
 const format = (nodes, parentAncestry) => {
   return nodes.map((node) => {
-    const ancestry = [...parentAncestry, getKey(node)]
-    const prefix = `Property '${ancestry.join('.')}' was`
-
     const type = getType(node)
 
-    switch (type) {
-      case types.nested:
-        return format(getChildren(node), ancestry)
-      case types.added:
-        return `${prefix} added with ${stringify(getValue(node))}`
-      case types.deleted:
-        return `${prefix} deleted`
-      case types.changed:
-        return `${prefix} changed from ${stringify(getValueBefore(node))} to ${stringify(getValueAfter(node))}`
-      case types.unchanged:
-        return null
-      default:
-        throw new Error(`Unknown node type "${type}"`)
+    if (!has(nodeFormatters, type)) {
+      throw new Error(`Node type "${type} is not supported`)
     }
+
+    const ancestry = [...parentAncestry, getKey(node)]
+    const prefix = `Property '${ancestry.join('.')}' was`
+    const formatNode = nodeFormatters[type]
+    return formatNode({ node, ancestry, prefix })
   }).filter(identity).join('\n')
 }
 
@@ -40,6 +30,28 @@ const stringify = (value) => {
     : isString(value)
       ? `'${value}'`
       : value
+}
+
+const nodeFormatters = {
+  [types.nested] ({ node, ancestry }) {
+    return format(getChildren(node), ancestry)
+  },
+  [types.deleted] ({ prefix }) {
+    return `${prefix} deleted`
+  },
+  [types.added] ({ node, prefix }) {
+    return `${prefix} added with ${stringify(getValueAfter(node))}`
+  },
+  [types.unchanged] () {
+    return null
+  },
+  [types.changed] ({ node, prefix }) {
+    return [
+      `${prefix} changed `,
+      `from ${stringify(getValueBefore(node))} `,
+      `to ${stringify(getValueAfter(node))}`
+    ].join('')
+  }
 }
 
 export default (diff) => format(diff, [])
