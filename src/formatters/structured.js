@@ -3,7 +3,7 @@ import { reduce, isObject } from 'lodash'
 import {
   types,
   getType,
-  getName,
+  getKey,
   getValue,
   getValueBefore,
   getValueAfter,
@@ -15,22 +15,22 @@ const format = (nodes, depth) => {
 
   const props = nodes.map((node) => {
     const type = getType(node)
-    const name = getName(node)
+    const key = getKey(node)
 
     switch (type) {
       case types.nested:
-        return `    ${name}: ${format(getChildren(node), depth + 1).trim()}`
+        return `    ${key}: ${format(getChildren(node), depth + 1).trim()}`
       case types.added:
-        return `  + ${name}: ${stringify(getValue(node))}`
+        return `  + ${key}: ${stringify(getValue(node))}`
       case types.deleted:
-        return `  - ${name}: ${stringify(getValue(node))}`
+        return `  - ${key}: ${stringify(getValue(node))}`
       case types.changed:
         return [
-          `  - ${name}: ${stringify(getValueBefore(node))}`,
-          `  + ${name}: ${stringify(getValueAfter(node))}`
+          `  - ${key}: ${stringify(getValueBefore(node))}`,
+          `  + ${key}: ${stringify(getValueAfter(node))}`
         ]
       case types.unchanged:
-        return `    ${name}: ${stringify(getValue(node))}`
+        return `    ${key}: ${stringify(getValue(node))}`
       default:
         throw new Error(`Unknown node type "${type}"`)
     }

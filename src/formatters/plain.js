@@ -2,7 +2,7 @@ import { isObject, isString, identity } from 'lodash'
 
 import {
   types,
-  getName,
+  getKey,
   getType,
   getChildren,
   getValue,
@@ -12,7 +12,7 @@ import {
 
 const format = (nodes, parentAncestry) => {
   return nodes.map((node) => {
-    const ancestry = [...parentAncestry, getName(node)]
+    const ancestry = [...parentAncestry, getKey(node)]
     const prefix = `Property '${ancestry.join('.')}' was`
 
     const type = getType(node)

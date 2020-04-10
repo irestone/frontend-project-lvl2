@@ -10,7 +10,7 @@ const types = {
 
 const makeNode = (config) => cloneDeep(config)
 const getType = ({ type }) => type
-const getName = ({ name }) => name
+const getKey = ({ key }) => key
 const getValue = ({ value }) => value
 const getValueBefore = ({ valueBefore }) => valueBefore
 const getValueAfter = ({ valueAfter }) => valueAfter
@@ -24,40 +24,40 @@ const buildDiff = (before, after) => {
 
     if (isObject(valueBefore) && isObject(valueAfter)) {
       return makeNode({
-        name: key,
         type: types.nested,
+        key,
         children: buildDiff(valueBefore, valueAfter)
       })
     }
 
     if (!has(before, key)) {
       return makeNode({
-        name: key,
         type: types.added,
+        key,
         value: valueAfter
       })
     }
 
     if (!has(after, key)) {
       return makeNode({
-        name: key,
         type: types.deleted,
+        key,
         value: valueBefore
       })
     }
 
     if (!isEqual(valueBefore, valueAfter)) {
       return makeNode({
-        name: key,
         type: types.changed,
+        key,
         valueBefore,
         valueAfter
       })
     }
 
     return makeNode({
-      name: key,
       type: types.unchanged,
+      key,
       value: valueBefore
     })
   }, [])
@@ -66,7 +66,7 @@ const buildDiff = (before, after) => {
 export {
   types,
   getType,
-  getName,
+  getKey,
   getValue,
   getValueBefore,
   getValueAfter,
