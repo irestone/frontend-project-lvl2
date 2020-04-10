@@ -9,7 +9,7 @@ const types = {
 }
 
 const buildDiff = (before, after) => {
-  const keys = union(Object.keys(before), Object.keys(after))
+  const keys = union(Object.keys(before), Object.keys(after)).sort()
   return keys.reduce((acc, key) => {
     const valueBefore = before[key]
     const valueAfter = after[key]
