@@ -12,7 +12,7 @@ const format = (nodes, depth) => {
 
     switch (type) {
       case types.nested:
-        return `    ${name}: ${format(getChildren(node), depth + 1)}`
+        return `    ${name}: ${format(getChildren(node), depth + 1).trim()}`
       case types.added:
         return `  + ${name}: ${stringify(value)}`
       case types.deleted:
@@ -35,7 +35,6 @@ const format = (nodes, depth) => {
     .flat()
     .map((prop) => pad + prop)
     .join('\n')
-    .trim()
 }
 
 const createValueStringifier = (depth) => (value) => {
