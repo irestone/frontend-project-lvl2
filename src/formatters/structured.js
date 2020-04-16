@@ -1,7 +1,8 @@
-import { reduce, isObject, has } from 'lodash'
+import { isObject, has } from 'lodash'
 
 import {
   types,
+  makeNode,
   getType,
   getKey,
   getValueBefore,
@@ -9,59 +10,64 @@ import {
   getChildren
 } from '../diffBuilder'
 
-const format = (nodes, depth) => {
-  const stringify = createValueStringifier(depth)
+const genPad = (depth) => ' '.repeat(4 * depth)
 
+const format = (nodes, depth) => {
   const props = nodes.map((node) => {
     const type = getType(node)
-
     if (!has(nodeFormatters, type)) {
-      throw new Error(`Node type "${type} is not supported`)
+      throw new Error(`Node of type "${type}" is not supported`)
     }
-
     const formatNode = nodeFormatters[type]
-    return formatNode({ node, stringify, depth })
+    return formatNode(node, depth)
   })
 
-  const pad = ' '.repeat(4 * depth)
-
-  return ['{', ...props, '}']
-    .flat()
-    .map((prop) => pad + prop)
-    .join('\n')
+  return [
+    '{',
+    ...props,
+    `${genPad(depth)}}`
+  ].flat().join('\n')
 }
 
-const createValueStringifier = (depth) => (value) => {
-  return isObject(value) ? objectToString(value, depth + 1) : value
-}
+const stringify = (value, depth) => {
+  if (!isObject(value)) {
+    return String(value)
+  }
 
-const objectToString = (object, depth) => {
-  const props = reduce(object, (acc, value, key) => {
-    const propValue = isObject(value) ? objectToString(value, depth + 1) : value
-    return [...acc, `    ${key}: ${propValue}`]
-  }, [])
+  const formatNode = nodeFormatters[types.unchanged]
 
-  const pad = ' '.repeat(4 * depth)
-  return ['{', ...props, '}'].map((prop) => pad + prop).join('\n').trim()
+  const props = Object.entries(value).map(([key, value]) => {
+    const node = makeNode(
+      types.unchanged,
+      { key, valueBefore: value, valueAfter: value }
+    )
+    return formatNode(node, depth + 1)
+  })
+
+  return [
+    '{',
+    ...props,
+    `${genPad(depth)}    }`
+  ].join('\n')
 }
 
 const nodeFormatters = {
-  [types.nested] ({ node, depth }) {
-    return `    ${getKey(node)}: ${format(getChildren(node), depth + 1).trim()}`
+  [types.nested]: (node, depth) => {
+    return `${genPad(depth)}    ${getKey(node)}: ${format(getChildren(node), depth + 1)}`
   },
-  [types.deleted] ({ node, stringify }) {
-    return `  - ${getKey(node)}: ${stringify(getValueBefore(node))}`
+  [types.unchanged]: (node, depth) => {
+    return `${genPad(depth)}    ${getKey(node)}: ${stringify(getValueBefore(node), depth)}`
   },
-  [types.added] ({ node, stringify }) {
-    return `  + ${getKey(node)}: ${stringify(getValueAfter(node))}`
+  [types.deleted]: (node, depth) => {
+    return `${genPad(depth)}  - ${getKey(node)}: ${stringify(getValueBefore(node), depth)}`
   },
-  [types.unchanged] ({ node, stringify }) {
-    return `    ${getKey(node)}: ${stringify(getValueBefore(node))}`
+  [types.added]: (node, depth) => {
+    return `${genPad(depth)}  + ${getKey(node)}: ${stringify(getValueAfter(node), depth)}`
   },
-  [types.changed] ({ node, stringify }) {
+  [types.changed]: (node, depth) => {
     return [
-      `  - ${getKey(node)}: ${stringify(getValueBefore(node))}`,
-      `  + ${getKey(node)}: ${stringify(getValueAfter(node))}`
+      `${genPad(depth)}  - ${getKey(node)}: ${stringify(getValueBefore(node), depth)}`,
+      `${genPad(depth)}  + ${getKey(node)}: ${stringify(getValueAfter(node), depth)}`
     ]
   }
 }

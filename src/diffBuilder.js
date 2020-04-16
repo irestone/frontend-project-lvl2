@@ -48,6 +48,7 @@ const buildDiff = (before, after) => {
 
 export {
   types,
+  makeNode,
   getType,
   getKey,
   getValueBefore,

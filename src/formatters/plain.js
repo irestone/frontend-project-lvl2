@@ -9,18 +9,17 @@ import {
   getValueAfter
 } from '../diffBuilder'
 
+const genPrefix = (ancestry) => `Property '${ancestry.join('.')}' was`
+
 const format = (nodes, parentAncestry) => {
   return nodes.map((node) => {
     const type = getType(node)
-
     if (!has(nodeFormatters, type)) {
-      throw new Error(`Node type "${type} is not supported`)
+      throw new Error(`Node of type "${type}" is not supported`)
     }
-
     const ancestry = [...parentAncestry, getKey(node)]
-    const prefix = `Property '${ancestry.join('.')}' was`
     const formatNode = nodeFormatters[type]
-    return formatNode({ node, ancestry, prefix })
+    return formatNode(node, ancestry)
   }).filter(identity).join('\n')
 }
 
@@ -33,21 +32,21 @@ const stringify = (value) => {
 }
 
 const nodeFormatters = {
-  [types.nested] ({ node, ancestry }) {
+  [types.nested]: (node, ancestry) => {
     return format(getChildren(node), ancestry)
   },
-  [types.deleted] ({ prefix }) {
-    return `${prefix} deleted`
+  [types.deleted]: (_, ancestry) => {
+    return `${genPrefix(ancestry)} deleted`
   },
-  [types.added] ({ node, prefix }) {
-    return `${prefix} added with ${stringify(getValueAfter(node))}`
+  [types.added]: (node, ancestry) => {
+    return `${genPrefix(ancestry)} added with ${stringify(getValueAfter(node))}`
   },
-  [types.unchanged] () {
+  [types.unchanged]: () => {
     return null
   },
-  [types.changed] ({ node, prefix }) {
+  [types.changed]: (node, ancestry) => {
     return [
-      `${prefix} changed `,
+      `${genPrefix(ancestry)} changed `,
       `from ${stringify(getValueBefore(node))} `,
       `to ${stringify(getValueAfter(node))}`
     ].join('')
