@@ -24,11 +24,15 @@ const format = (nodes, parentAncestry) => {
 }
 
 const stringify = (value) => {
-  return isObject(value)
-    ? '[complex value]'
-    : isString(value)
-      ? `'${value}'`
-      : value
+  if (isObject(value)) {
+    return '[complex value]'
+  }
+
+  if (isString(value)) {
+    return `'${value}'`
+  }
+
+  return value
 }
 
 const nodeFormatters = {

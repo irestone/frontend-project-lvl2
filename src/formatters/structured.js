@@ -47,7 +47,7 @@ const stringify = (value, depth) => {
   return [
     '{',
     ...props,
-    `${genPad(depth)}    }`
+    `${genPad(depth + 1)}}`
   ].join('\n')
 }
 

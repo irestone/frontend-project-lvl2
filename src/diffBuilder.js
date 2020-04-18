@@ -43,7 +43,7 @@ const buildDiff = (before, after) => {
     }
 
     return makeNode(types.unchanged, baseNodeBody)
-  }, [])
+  })
 }
 
 export {
