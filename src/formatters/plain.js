@@ -36,25 +36,18 @@ const stringify = (value) => {
 }
 
 const nodeFormatters = {
-  [types.nested]: (node, ancestry) => {
-    return format(getChildren(node), ancestry)
-  },
-  [types.deleted]: (_, ancestry) => {
-    return `${genPrefix(ancestry)} deleted`
-  },
-  [types.added]: (node, ancestry) => {
-    return `${genPrefix(ancestry)} added with ${stringify(getValueAfter(node))}`
-  },
-  [types.unchanged]: () => {
-    return null
-  },
-  [types.changed]: (node, ancestry) => {
-    return [
-      `${genPrefix(ancestry)} changed `,
-      `from ${stringify(getValueBefore(node))} `,
-      `to ${stringify(getValueAfter(node))}`
-    ].join('')
-  }
+  [types.nested]: (node, ancestry) => format(getChildren(node), ancestry),
+  [types.deleted]: (_, ancestry) => `${genPrefix(ancestry)} deleted`,
+  [types.added]: (node, ancestry) => [
+    `${genPrefix(ancestry)} added`,
+    `with ${stringify(getValueAfter(node))}`
+  ].join(' '),
+  [types.changed]: (node, ancestry) => [
+    `${genPrefix(ancestry)} changed`,
+    `from ${stringify(getValueBefore(node))}`,
+    `to ${stringify(getValueAfter(node))}`
+  ].join(' '),
+  [types.unchanged]: () => null
 }
 
 export default (diff) => format(diff, [])

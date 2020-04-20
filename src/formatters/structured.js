@@ -52,13 +52,31 @@ const stringify = (value, depth) => {
 }
 
 const nodeFormatters = {
-  [types.nested]: (node, depth) => `${genIndentation(depth)}    ${getKey(node)}: ${format(getChildren(node), depth + 1)}`,
-  [types.unchanged]: (node, depth) => `${genIndentation(depth)}    ${getKey(node)}: ${stringify(getValueBefore(node), depth)}`,
-  [types.deleted]: (node, depth) => `${genIndentation(depth)}  - ${getKey(node)}: ${stringify(getValueBefore(node), depth)}`,
-  [types.added]: (node, depth) => `${genIndentation(depth)}  + ${getKey(node)}: ${stringify(getValueAfter(node), depth)}`,
+  [types.nested]: (node, depth) => [
+    `${genIndentation(depth)}    ${getKey(node)}:`,
+    format(getChildren(node), depth + 1)
+  ].join(' '),
+  [types.unchanged]: (node, depth) => [
+    `${genIndentation(depth)}    ${getKey(node)}:`,
+    stringify(getValueBefore(node), depth)
+  ].join(' '),
+  [types.deleted]: (node, depth) => [
+    `${genIndentation(depth)}  - ${getKey(node)}:`,
+    stringify(getValueBefore(node), depth)
+  ].join(' '),
+  [types.added]: (node, depth) => [
+    `${genIndentation(depth)}  + ${getKey(node)}:`,
+    stringify(getValueAfter(node), depth)
+  ].join(' '),
   [types.changed]: (node, depth) => [
-    `${genIndentation(depth)}  - ${getKey(node)}: ${stringify(getValueBefore(node), depth)}`,
-    `${genIndentation(depth)}  + ${getKey(node)}: ${stringify(getValueAfter(node), depth)}`
+    [
+      `${genIndentation(depth)}  - ${getKey(node)}:`,
+      stringify(getValueBefore(node), depth)
+    ].join(' '),
+    [
+      `${genIndentation(depth)}  + ${getKey(node)}:`,
+      stringify(getValueAfter(node), depth)
+    ].join(' ')
   ]
 }
 
