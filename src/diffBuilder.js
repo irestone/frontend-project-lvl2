@@ -8,51 +8,40 @@ const types = {
   nested: 'nested'
 }
 
-const makeNode = (type, body) => ({ type, ...body })
-const getType = ({ type }) => type
-const getKey = ({ key }) => key
-const getValueBefore = ({ valueBefore }) => valueBefore
-const getValueAfter = ({ valueAfter }) => valueAfter
-const getChildren = ({ children }) => children
-
 const buildDiff = (before, after) => {
   const keys = union(Object.keys(before), Object.keys(after)).sort()
   return keys.map((key) => {
     const valueBefore = before[key]
     const valueAfter = after[key]
 
-    const baseNodeBody = { key, valueBefore, valueAfter }
-
     if (!has(before, key)) {
-      return makeNode(types.added, baseNodeBody)
+      return { type: types.added, key, valueAfter }
     }
 
     if (!has(after, key)) {
-      return makeNode(types.deleted, baseNodeBody)
+      return { type: types.deleted, key, valueBefore }
     }
 
     if (isObject(valueBefore) && isObject(valueAfter)) {
-      return makeNode(
-        types.nested,
-        { key, children: buildDiff(valueBefore, valueAfter) }
-      )
+      return {
+        type: types.nested,
+        key,
+        children: buildDiff(valueBefore, valueAfter)
+      }
     }
 
     if (!isEqual(valueBefore, valueAfter)) {
-      return makeNode(types.changed, baseNodeBody)
+      return {
+        type: types.changed,
+        key,
+        valueBefore,
+        valueAfter
+      }
     }
 
-    return makeNode(types.unchanged, baseNodeBody)
+    return { type: types.unchanged, key, valueBefore, valueAfter }
   })
 }
 
-export {
-  types,
-  makeNode,
-  getType,
-  getKey,
-  getValueBefore,
-  getValueAfter,
-  getChildren
-}
+export { types }
 export default buildDiff

@@ -1,20 +1,12 @@
 import { isObject, has } from 'lodash'
 
-import {
-  types,
-  makeNode,
-  getType,
-  getKey,
-  getValueBefore,
-  getValueAfter,
-  getChildren
-} from '../diffBuilder'
+import { types } from '../diffBuilder'
 
 const genIndentation = (depth) => ' '.repeat(4 * depth)
 
 const format = (nodes, depth) => {
   const formattedNodes = nodes.map((node) => {
-    const type = getType(node)
+    const { type } = node
     if (!has(nodeFormatters, type)) {
       throw new Error(`Node of type "${type}" is not supported`)
     }
@@ -37,10 +29,12 @@ const stringify = (value, depth) => {
   const formatNode = nodeFormatters[types.unchanged]
 
   const stringifiedProps = Object.entries(value).map(([key, value]) => {
-    const node = makeNode(
-      types.unchanged,
-      { key, valueBefore: value, valueAfter: value }
-    )
+    const node = {
+      type: types.unchanged,
+      key,
+      valueBefore: value,
+      valueAfter: value
+    }
     return formatNode(node, depth + 1)
   })
 
@@ -53,29 +47,29 @@ const stringify = (value, depth) => {
 
 const nodeFormatters = {
   [types.nested]: (node, depth) => [
-    `${genIndentation(depth)}    ${getKey(node)}:`,
-    format(getChildren(node), depth + 1)
+    `${genIndentation(depth)}    ${node.key}:`,
+    format(node.children, depth + 1)
   ].join(' '),
   [types.unchanged]: (node, depth) => [
-    `${genIndentation(depth)}    ${getKey(node)}:`,
-    stringify(getValueBefore(node), depth)
+    `${genIndentation(depth)}    ${node.key}:`,
+    stringify(node.valueBefore, depth)
   ].join(' '),
   [types.deleted]: (node, depth) => [
-    `${genIndentation(depth)}  - ${getKey(node)}:`,
-    stringify(getValueBefore(node), depth)
+    `${genIndentation(depth)}  - ${node.key}:`,
+    stringify(node.valueBefore, depth)
   ].join(' '),
   [types.added]: (node, depth) => [
-    `${genIndentation(depth)}  + ${getKey(node)}:`,
-    stringify(getValueAfter(node), depth)
+    `${genIndentation(depth)}  + ${node.key}:`,
+    stringify(node.valueAfter, depth)
   ].join(' '),
   [types.changed]: (node, depth) => [
     [
-      `${genIndentation(depth)}  - ${getKey(node)}:`,
-      stringify(getValueBefore(node), depth)
+      `${genIndentation(depth)}  - ${node.key}:`,
+      stringify(node.valueBefore, depth)
     ].join(' '),
     [
-      `${genIndentation(depth)}  + ${getKey(node)}:`,
-      stringify(getValueAfter(node), depth)
+      `${genIndentation(depth)}  + ${node.key}:`,
+      stringify(node.valueAfter, depth)
     ].join(' ')
   ]
 }
