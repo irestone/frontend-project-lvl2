@@ -21,13 +21,6 @@ const buildDiff = (before, after) => {
     const valueBefore = before[key]
     const valueAfter = after[key]
 
-    if (isObject(valueBefore) && isObject(valueAfter)) {
-      return makeNode(
-        types.nested,
-        { key, children: buildDiff(valueBefore, valueAfter) }
-      )
-    }
-
     const baseNodeBody = { key, valueBefore, valueAfter }
 
     if (!has(before, key)) {
@@ -36,6 +29,13 @@ const buildDiff = (before, after) => {
 
     if (!has(after, key)) {
       return makeNode(types.deleted, baseNodeBody)
+    }
+
+    if (isObject(valueBefore) && isObject(valueAfter)) {
+      return makeNode(
+        types.nested,
+        { key, children: buildDiff(valueBefore, valueAfter) }
+      )
     }
 
     if (!isEqual(valueBefore, valueAfter)) {
