@@ -7,16 +7,15 @@ import buildDiff from './diffBuilder'
 
 const getFileFormat = (filepath) => path.extname(filepath).slice(1)
 
-export default (firstConfigPath, secondConfigPath, formatName) => {
-  const firstConfigContent = fs.readFileSync(firstConfigPath, 'utf8')
-  const firstConfigFormat = getFileFormat(firstConfigPath)
-  const before = parse(firstConfigContent, firstConfigFormat)
+const parseFile = (filepath) => {
+  const content = fs.readFileSync(filepath, 'utf8')
+  const format = getFileFormat(filepath)
+  return parse(content, format)
+}
 
-  const secondConfigContent = fs.readFileSync(secondConfigPath, 'utf8')
-  const secondConfigFormat = getFileFormat(secondConfigPath)
-  const after = parse(secondConfigContent, secondConfigFormat)
-
+export default (firstConfigPath, secondConfigPath, formatName = 'plain') => {
+  const before = parseFile(firstConfigPath)
+  const after = parseFile(secondConfigPath)
   const diff = buildDiff(before, after)
-
   return format(diff, formatName)
 }
