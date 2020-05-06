@@ -15,9 +15,4 @@ extends:
   - standard
   - 'plugin:jest/recommended'
 
-
-rules:
-  no-console: 0
-  import/extensions: 0 # FIXME: remove when rule will be adjusted for new nodejs version
-  jest/no-disabled-tests: 0
-  jest/no-commented-out-tests: 0
+rules: {}
